@@ -10,11 +10,14 @@ controls:
     severity: high
     collector: github
     check: branch_protection_enabled
-    params: {required_reviews: 1}
+    params:
+      required_reviews: 1
+      allow_bypass: false   # true = accept admins/actors that can bypass reviews
     evidence: [api_response_excerpt, timestamp, repo, endpoint]
     remediation: >-
-      Protect the default branch (classic protection or a ruleset) and require at least
-      the configured number of approving pull-request reviews.
+      Protect the default branch (classic protection or a ruleset), require at least the
+      configured number of approving pull-request reviews, and do not let admins bypass it
+      (classic: "Do not allow bypassing" / enforce_admins; rulesets: empty bypass list).
 
   - id: AC-01
     title: Two-factor authentication required for organisation members

@@ -74,6 +74,9 @@
     "body": {
       "required_pull_request_reviews": {
         "required_approving_review_count": 1
+      },
+      "enforce_admins": {
+        "enabled": true
       }
     }
   },

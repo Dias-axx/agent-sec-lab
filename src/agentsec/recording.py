@@ -25,12 +25,17 @@ META_KEY = "_meta"
 # Fields read by the checks in collectors/github.py. Everything else is dropped.
 KEEP_KEYS = frozenset(
     {
+        "actor_type",
         "archived",
+        "bypass_actors",
+        "bypass_mode",
         "can_approve_pull_request_reviews",
         "content",
         "default_branch",
         "default_workflow_permissions",
+        "enabled",
         "encoding",
+        "enforce_admins",
         "errors",
         "full_name",
         "kind",
@@ -42,6 +47,7 @@ KEEP_KEYS = frozenset(
         "path",
         "required_approving_review_count",
         "required_pull_request_reviews",
+        "ruleset_id",
         "secret_scanning",
         "secret_scanning_push_protection",
         "security_and_analysis",

@@ -9,7 +9,7 @@ is designed or operating effectively. Auditors assess controls; this tool collec
 
 | Control | Check | SOC 2 | ISO 27001 | Rationale (paraphrased) |
 |---|---|---|---|---|
-| CM-01 | `branch_protection_enabled` | CC6.1, CC8.1 | A.8.4, A.8.32 | Changes to the production code line require peer review → change management and controlled write access to source code. Classic protection and rulesets both count. |
+| CM-01 | `branch_protection_enabled` | CC6.1, CC8.1 | A.8.4, A.8.32 | Changes to the production code line require peer review that privileged users cannot skip → change management and controlled write access to source code. Classic protection (`enforce_admins`) and rulesets (`bypass_actors`) both count; `allow_bypass: true` relaxes the bypass requirement. |
 | AC-01 | `org_mfa_required` | CC6.1 | A.5.17, A.8.5 | Org membership requires a second factor → authentication strength for logical access. Does not prove phishing-resistant MFA. |
 | DP-01 | `secret_scanning_enabled` | CC6.1, CC7.1 | A.5.17, A.8.12 | Detects and blocks committed credentials → protection of authentication information and leakage prevention. |
 | VM-01 | `dependabot_alerts_enabled` | CC7.1 | A.8.8 | Known-vulnerable dependencies are surfaced → technical vulnerability identification. Does not prove alerts are triaged. |
@@ -38,6 +38,9 @@ Aggregation per control: any FAIL → FAIL; else any ERROR → ERROR; else PASS.
   source (e.g. 403 for an integration token) is noted as `unreadable` in the evidence; it only
   yields ERROR when the readable sources do not meet the requirement. Validated live against
   the test repo (ruleset with 1 required review, classic endpoint 403 → PASS).
+- CM-01 bypass: a source only proves PASS if nobody can bypass it (classic `enforce_admins`
+  enabled, ruleset `bypass_actors` empty; any bypass mode counts). Hidden bypass configuration
+  → ERROR. Validated live: ruleset with repository-admin bypass `always` is detected.
 - AC-02: allowlist entries match repository names case-insensitively (as GitHub does).
 - Enterprise-level policies (enforced above the org) are not evaluated separately; the checks
   read the effective org/repo state.

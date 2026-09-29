@@ -174,9 +174,24 @@ def _per_repo(ctx: GitHubContext, fn: Callable[[dict[str, Any]], Finding]) -> li
 # --------------------------------------------------------------------------- checks
 
 
+@dataclass(frozen=True)
+class _ReviewSource:
+    """One mechanism requiring PR reviews. bypass: True/False, None = could not determine."""
+
+    name: str
+    reviews: int
+    bypass: bool | None
+
+
 def branch_protection_enabled(ctx: GitHubContext, params: Mapping[str, Any]) -> list[Finding]:
-    """Default branch requires PR reviews via classic protection or rulesets."""
+    """Default branch requires PR reviews (classic protection or rulesets) without bypass.
+
+    PASS needs at least one source that requires enough reviews and that admins/actors
+    cannot bypass (classic: enforce_admins; rulesets: empty bypass_actors), unless
+    ``allow_bypass`` is set. Unreadable sources only matter if they could change the result.
+    """
     required = int(params.get("required_reviews", 1))
+    allow_bypass = bool(params.get("allow_bypass", False))
 
     def one(repo: dict[str, Any]) -> Finding:
         name, branch = repo["full_name"], repo["default_branch"]
@@ -185,69 +200,109 @@ def branch_protection_enabled(ctx: GitHubContext, params: Mapping[str, Any]) -> 
         plan_limited: list[str] = []
         unreadable: list[ApiError] = []
 
-        def classic() -> int:
+        def classic() -> list[_ReviewSource]:
             path = f"/repos/{name}/branches/{qbranch}/protection"
             code, body = ctx.client.get_raw(path)
             msg = _msg(body)
             if code == 200:
                 prr = body.get("required_pull_request_reviews") or {}
                 reviews = int(prr.get("required_approving_review_count", 0))
-                evidence.append(_ev(path, required_approving_review_count=reviews))
-                return reviews
+                enforce = (body.get("enforce_admins") or {}).get("enabled")
+                evidence.append(
+                    _ev(path, required_approving_review_count=reviews, enforce_admins=enforce)
+                )
+                bypass = None if enforce is None else not enforce
+                return [_ReviewSource("classic", reviews, bypass)]
             if code == 404 and msg == "Branch not protected":
                 evidence.append(_ev(path, status=404, message=msg))
-                return 0
+                return []
             if _plan_unavailable(code, body):
                 plan_limited.append("classic")
                 evidence.append(_ev(path, status=403, plan_unavailable=True))
-                return 0
+                return []
             raise ApiError(path, code, msg)
 
-        def rulesets() -> int:
+        def ruleset_bypass(rid: Any) -> bool | None:
+            if rid is None:
+                return None
+            path = f"/repos/{name}/rulesets/{rid}"
+            try:
+                code, body = ctx.client.get_raw(path)
+            except ApiError as exc:
+                unreadable.append(exc)
+                evidence.append(_ev(path, status=exc.status, unreadable=True))
+                return None
+            if code != 200 or not isinstance(body, dict) or "bypass_actors" not in body:
+                if code != 200:
+                    unreadable.append(ApiError(path, code, _msg(body)))
+                evidence.append(_ev(path, status=code, bypass_actors=None))
+                return None
+            actors = body["bypass_actors"] or []
+            evidence.append(
+                _ev(
+                    path,
+                    bypass_actors=[
+                        {"actor_type": a.get("actor_type"), "bypass_mode": a.get("bypass_mode")}
+                        for a in actors
+                    ],
+                )
+            )
+            return bool(actors)
+
+        def rulesets() -> list[_ReviewSource]:
             path = f"/repos/{name}/rules/branches/{qbranch}"
             code, rules = ctx.client.get_raw(path)
             if code == 200 and isinstance(rules, list):
-                reviews = max(
-                    (
-                        int((r.get("parameters") or {}).get("required_approving_review_count", 0))
-                        for r in rules
-                        if r.get("type") == "pull_request"
-                    ),
-                    default=0,
+                pr_rules = [r for r in rules if r.get("type") == "pull_request"]
+                out = []
+                for r in pr_rules:
+                    reviews = int(
+                        (r.get("parameters") or {}).get("required_approving_review_count", 0)
+                    )
+                    rid = r.get("ruleset_id")
+                    # bypass only matters for rulesets that would satisfy the requirement
+                    bypass = False if allow_bypass or reviews < required else ruleset_bypass(rid)
+                    out.append(_ReviewSource(f"ruleset:{rid}", reviews, bypass))
+                evidence.append(
+                    _ev(
+                        path,
+                        pull_request_required_reviews=max((s.reviews for s in out), default=0),
+                    )
                 )
-                evidence.append(_ev(path, pull_request_required_reviews=reviews))
-                return reviews
+                return out
             if _plan_unavailable(code, rules):
                 plan_limited.append("rulesets")
                 evidence.append(_ev(path, status=403, plan_unavailable=True))
-                return 0
+                return []
             raise ApiError(path, code, _msg(rules))
 
-        # Either source alone can prove PASS; an unreadable source only matters if the
-        # readable ones are insufficient (then ERROR, never a guessed FAIL/PASS).
-        effective = 0
-        for source in (classic, rulesets):
+        sources: list[_ReviewSource] = []
+        for collect in (classic, rulesets):
             try:
-                effective = max(effective, source())
+                sources += collect()
             except ApiError as exc:
                 unreadable.append(exc)
                 evidence.append(_ev(exc.endpoint, status=exc.status, unreadable=True))
 
+        effective = max((s.reviews for s in sources), default=0)
+        sufficient = [s for s in sources if s.reviews >= required]
         detail = f"branch '{branch}': {effective} required review(s), need >= {required}"
         if plan_limited:
             detail += f"; {' and '.join(plan_limited)} not available on current GitHub plan"
-        if effective >= required:
-            if unreadable:
-                detail += f"; {len(unreadable)} source(s) unreadable, not needed for PASS"
-            return Finding(subject=name, status=Status.PASS, detail=detail, evidence=evidence)
-        if unreadable:
-            return Finding(
-                subject=name,
-                status=Status.ERROR,
-                detail=f"{detail}; cannot conclude: {unreadable[0]}",
-                evidence=evidence,
-            )
-        return Finding(subject=name, status=Status.FAIL, detail=detail, evidence=evidence)
+
+        def finding(status: Status, extra: str = "") -> Finding:
+            return Finding(subject=name, status=status, detail=detail + extra, evidence=evidence)
+
+        if any(allow_bypass or s.bypass is False for s in sufficient):
+            extra = f"; {len(unreadable)} source(s) unreadable, not needed" if unreadable else ""
+            return finding(Status.PASS, extra)
+        if unreadable or any(s.bypass is None for s in sufficient):
+            reason = str(unreadable[0]) if unreadable else "bypass configuration not visible"
+            return finding(Status.ERROR, f"; cannot conclude: {reason}")
+        if sufficient:
+            names = ", ".join(s.name for s in sufficient)
+            return finding(Status.FAIL, f"; reviews can be bypassed ({names})")
+        return finding(Status.FAIL)
 
     return _per_repo(ctx, one)
 
