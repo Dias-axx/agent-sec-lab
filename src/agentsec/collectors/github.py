@@ -136,6 +136,14 @@ def _ev(endpoint: str, **excerpt: Any) -> Evidence:
     return Evidence(endpoint=endpoint, excerpt=excerpt)
 
 
+PLAN_UNAVAILABLE_PREFIX = "Upgrade to GitHub Pro"
+
+
+def _plan_unavailable(code: int, body: Any) -> bool:
+    """403 because the feature is not in the org's plan (e.g. private repo on Free)."""
+    return code == 403 and _msg(body).startswith(PLAN_UNAVAILABLE_PREFIX)
+
+
 def _msg(body: Any) -> str:
     return str(body.get("message", "")) if isinstance(body, dict) else ""
 
@@ -174,6 +182,7 @@ def branch_protection_enabled(ctx: GitHubContext, params: Mapping[str, Any]) -> 
         name, branch = repo["full_name"], repo["default_branch"]
         qbranch = quote(branch, safe="")
         evidence: list[Evidence] = []
+        plan_limited: list[str] = []
 
         classic_reviews = 0
         path = f"/repos/{name}/branches/{qbranch}/protection"
@@ -185,27 +194,40 @@ def branch_protection_enabled(ctx: GitHubContext, params: Mapping[str, Any]) -> 
             evidence.append(_ev(path, required_approving_review_count=classic_reviews))
         elif code == 404 and msg == "Branch not protected":
             evidence.append(_ev(path, status=404, message=msg))
+        elif _plan_unavailable(code, body):
+            plan_limited.append("classic")
+            evidence.append(_ev(path, status=403, plan_unavailable=True))
         else:
             raise ApiError(path, code, msg)
 
         rules_path = f"/repos/{name}/rules/branches/{qbranch}"
-        rules = ctx.client.get_json(rules_path)
-        ruleset_reviews = max(
-            (
-                int((r.get("parameters") or {}).get("required_approving_review_count", 0))
-                for r in rules
-                if r.get("type") == "pull_request"
-            ),
-            default=0,
-        )
-        evidence.append(_ev(rules_path, pull_request_required_reviews=ruleset_reviews))
+        code, rules = ctx.client.get_raw(rules_path)
+        ruleset_reviews = 0
+        if code == 200 and isinstance(rules, list):
+            ruleset_reviews = max(
+                (
+                    int((r.get("parameters") or {}).get("required_approving_review_count", 0))
+                    for r in rules
+                    if r.get("type") == "pull_request"
+                ),
+                default=0,
+            )
+            evidence.append(_ev(rules_path, pull_request_required_reviews=ruleset_reviews))
+        elif _plan_unavailable(code, rules):
+            plan_limited.append("rulesets")
+            evidence.append(_ev(rules_path, status=403, plan_unavailable=True))
+        else:
+            raise ApiError(rules_path, code, _msg(rules))
 
         effective = max(classic_reviews, ruleset_reviews)
         ok = effective >= required
+        detail = f"branch '{branch}': {effective} required review(s), need >= {required}"
+        if plan_limited:
+            detail += f"; {' and '.join(plan_limited)} not available on current GitHub plan"
         return Finding(
             subject=name,
             status=Status.PASS if ok else Status.FAIL,
-            detail=f"branch '{branch}': {effective} required review(s), need >= {required}",
+            detail=detail,
             evidence=evidence,
         )
 

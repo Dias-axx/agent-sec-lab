@@ -31,6 +31,9 @@ Aggregation per control: any FAIL → FAIL; else any ERROR → ERROR; else PASS.
 
 ## Known gaps
 
+- CM-01: if GitHub answers 403 "Upgrade to GitHub Pro…" (feature not in the org's plan,
+  e.g. private repo on Free), that source counts as 0 required reviews and is noted in the
+  evidence; any other 403 remains ERROR. Observed live on a private repo in a Free org.
 - Enterprise-level policies (enforced above the org) are not evaluated separately; the checks
   read the effective org/repo state.
 - `ASSUMPTION`: visibility of `two_factor_requirement_enabled`, `security_and_analysis`, and

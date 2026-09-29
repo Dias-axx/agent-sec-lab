@@ -170,3 +170,37 @@ def test_no_visible_repos_is_error(github, routes):
     routes["/orgs/example-org/repos"]["body"] = []
     [f] = gh.dependabot_alerts_enabled(github, {})
     assert f.status is Status.ERROR
+
+
+PLAN_MSG = "Upgrade to GitHub Pro or make this repository public to enable this feature."
+
+
+def test_branch_protection_plan_limited_rulesets_uses_classic(github, routes, by_subject):
+    # Observed live on a private repo in a Free org: rulesets endpoint 403 with plan message.
+    routes["/repos/example-org/good-repo/rules/branches/main"] = {
+        "status": 403,
+        "body": {"message": PLAN_MSG},
+    }
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[GOOD].status is Status.PASS
+    assert any(e.excerpt.get("plan_unavailable") for e in f[GOOD].evidence)
+
+
+def test_branch_protection_plan_limited_everywhere_fails(github, routes, by_subject):
+    for path in (
+        "/repos/example-org/good-repo/branches/main/protection",
+        "/repos/example-org/good-repo/rules/branches/main",
+    ):
+        routes[path] = {"status": 403, "body": {"message": PLAN_MSG}}
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[GOOD].status is Status.FAIL
+    assert "not available on current GitHub plan" in f[GOOD].detail
+
+
+def test_branch_protection_other_403_still_error(github, routes, by_subject):
+    routes["/repos/example-org/good-repo/rules/branches/main"] = {
+        "status": 403,
+        "body": {"message": "Resource not accessible by integration"},
+    }
+    f = by_subject(gh.branch_protection_enabled(github, {}))
+    assert f[GOOD].status is Status.ERROR
