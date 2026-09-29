@@ -67,7 +67,13 @@ agentsec run --replay <fixture.json>             # offline run, no token
 - No employer-derived content; no secrets; assumptions marked.
 - Rollback: everything is git-tracked; releases tagged; no infra created except the owner's test org/subscription.
 
+## Test environment
+
+- GitHub test org: `dias-axx-lab` (owner-controlled, lab only). Token: fine-grained, read-only,
+  supplied by the owner via `GITHUB_TOKEN`; never committed. Recordings use `--org-alias demo-org`.
+- Live runs happen on the owner's machine. The Claude Code cloud session cannot reach
+  `/orgs/...` endpoints (GitHub access there is repo-scoped).
+
 ## Open inputs (ask owner)
 
-- GitHub test org name and token (owner supplies via env var; never committed).
 - Azure test subscription available? (phase 2)
