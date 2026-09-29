@@ -1,0 +1,138 @@
+{
+  "_meta": {
+    "kind": "recorded",
+    "org": "demo-org",
+    "recorded_at": "2026-09-29T23:01:24.560406+00:00",
+    "tool_version": "0.1.0",
+    "api_url": "https://api.github.com",
+    "note": "Recorded from a live API; bodies minimised, logins pseudonymised."
+  },
+  "/orgs/demo-org": {
+    "status": 200,
+    "body": {
+      "login": "demo-org",
+      "type": "Organization"
+    }
+  },
+  "/orgs/demo-org/actions/permissions/workflow": {
+    "status": 403,
+    "body": {
+      "message": "Resource not accessible by personal access token",
+      "status": "403"
+    },
+    "headers": {
+      "x-ratelimit-remaining": "4995",
+      "x-ratelimit-reset": "1790723438"
+    }
+  },
+  "/orgs/demo-org/members": {
+    "status": 200,
+    "body": []
+  },
+  "/orgs/demo-org/repos": {
+    "status": 200,
+    "body": [
+      {
+        "name": "CodeReview",
+        "full_name": "demo-org/CodeReview",
+        "archived": false,
+        "visibility": "public",
+        "default_branch": "main"
+      }
+    ]
+  },
+  "/repos/demo-org/CodeReview": {
+    "status": 200,
+    "body": {
+      "name": "CodeReview",
+      "full_name": "demo-org/CodeReview",
+      "archived": false,
+      "visibility": "public",
+      "default_branch": "main"
+    }
+  },
+  "/repos/demo-org/CodeReview/actions/permissions/workflow": {
+    "status": 403,
+    "body": {
+      "message": "Resource not accessible by personal access token",
+      "status": "403"
+    },
+    "headers": {
+      "x-ratelimit-remaining": "4994",
+      "x-ratelimit-reset": "1790723438"
+    }
+  },
+  "/repos/demo-org/CodeReview/branches/main/protection": {
+    "status": 403,
+    "body": {
+      "message": "Resource not accessible by personal access token",
+      "status": "403"
+    },
+    "headers": {
+      "x-ratelimit-remaining": "4969",
+      "x-ratelimit-reset": "1790723437"
+    }
+  },
+  "/repos/demo-org/CodeReview/codeowners/errors": {
+    "status": 200,
+    "body": {
+      "errors": []
+    }
+  },
+  "/repos/demo-org/CodeReview/contents/.github/CODEOWNERS": {
+    "status": 200,
+    "body": {
+      "name": "CODEOWNERS",
+      "path": ".github/CODEOWNERS",
+      "type": "file",
+      "content": "IyBEZWZhdWx0IG93bmVyIGZvciBhbGwgZmlsZXMuIFJlcXVpcmVkIHJldmll\nd2VycyBhcmUgZW5mb3JjZWQgdmlhIHRoZSAiTWFpblJ1bGUiIHJ1bGVzZXQu\nCiogQERpYXMtYXh4Cg==\n",
+      "encoding": "base64"
+    }
+  },
+  "/repos/demo-org/CodeReview/contents/.github/workflows": {
+    "status": 404,
+    "body": {
+      "message": "Not Found",
+      "status": "404"
+    }
+  },
+  "/repos/demo-org/CodeReview/rules/branches/main": {
+    "status": 200,
+    "body": [
+      {
+        "type": "deletion",
+        "ruleset_id": 24214028
+      },
+      {
+        "type": "pull_request",
+        "parameters": {
+          "required_approving_review_count": 1
+        },
+        "ruleset_id": 24214028
+      }
+    ]
+  },
+  "/repos/demo-org/CodeReview/rulesets/24214028": {
+    "status": 200,
+    "body": {
+      "name": "MainRule",
+      "bypass_actors": [
+        {
+          "actor_type": "RepositoryRole",
+          "bypass_mode": "always"
+        }
+      ]
+    }
+  },
+  "/repos/demo-org/CodeReview/vulnerability-alerts": {
+    "status": 403,
+    "body": {
+      "message": "Resource not accessible by personal access token",
+      "status": "403"
+    },
+    "headers": {
+      "x-ratelimit-remaining": "4964",
+      "x-ratelimit-reset": "1790723437"
+    }
+  }
+}
