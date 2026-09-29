@@ -202,10 +202,39 @@ def test_branch_protection_other_403_still_error(github, routes, by_subject):
         "status": 403,
         "body": {"message": "Resource not accessible by integration"},
     }
-    f = by_subject(gh.branch_protection_enabled(github, {}))
+    # classic gives 1 review; 2 required -> unreadable rulesets decide -> ERROR, not plan-limited
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 2}))
     assert f[GOOD].status is Status.ERROR
+    assert "not available on current GitHub plan" not in f[GOOD].detail
 
 
 def test_public_repo_allowlist_is_case_insensitive(github, by_subject):
     f = by_subject(gh.no_public_repos(github, {"allowlist": ["BAD-Repo"]}))
     assert f[BAD].status is Status.PASS
+
+
+def test_branch_protection_rulesets_sufficient_classic_unreadable_passes(
+    github, routes, by_subject
+):
+    # Observed live: classic endpoint 403 for an integration token, ruleset requires 1 review.
+    routes["/repos/example-org/bad-repo/branches/main/protection"] = {
+        "status": 403,
+        "body": {"message": "Resource not accessible by integration"},
+    }
+    routes["/repos/example-org/bad-repo/rules/branches/main"]["body"] = [
+        {"type": "pull_request", "parameters": {"required_approving_review_count": 1}}
+    ]
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[BAD].status is Status.PASS
+    assert any(e.excerpt.get("unreadable") for e in f[BAD].evidence)
+
+
+def test_branch_protection_rulesets_insufficient_classic_unreadable_errors(
+    github, routes, by_subject
+):
+    routes["/repos/example-org/bad-repo/branches/main/protection"] = {
+        "status": 403,
+        "body": {"message": "Resource not accessible by integration"},
+    }
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[BAD].status is Status.ERROR
