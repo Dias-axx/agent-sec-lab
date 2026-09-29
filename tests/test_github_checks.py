@@ -302,3 +302,11 @@ def test_ruleset_bypass_actors_hidden_is_error(github, routes, by_subject):
     del routes["/repos/example-org/bad-repo/rulesets/9"]["body"]["bypass_actors"]
     f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
     assert f[BAD].status is Status.ERROR
+
+
+def test_admin_count_zero_visible_is_error(github, routes):
+    # Observed live: token without org Members read gets an empty owner list.
+    # Every org has >= 1 owner, so 0 means "not visible", never a real FAIL.
+    routes["/orgs/example-org/members"]["body"] = []
+    [f] = gh.org_admin_count(github, {"min_admins": 2, "max_admins": 3})
+    assert f.status is Status.ERROR

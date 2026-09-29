@@ -19,5 +19,5 @@ What the recorder does:
 Every `*.json` here is replayed by `tests/test_recording.py::test_recorded_fixtures_replay_cleanly`
 in strict mode. If the catalog gains a check, re-record.
 
-Before committing: review the diff and let the gitleaks pre-commit hook run. Workflow file
-contents are kept (needed by SC-01).
+File contents are dropped except workflow files under `.github/workflows/` (needed by SC-01).
+Before committing: review the diff and let the gitleaks pre-commit hook run.

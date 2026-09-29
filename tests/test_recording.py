@@ -191,3 +191,25 @@ def test_recorded_fixtures_replay_cleanly(fixture):
     )
     missing = [f.detail for r in report.results for f in r.findings if "not in fixture" in f.detail]
     assert not missing, f"re-record {fixture.name}: catalog needs paths not in fixture"
+
+
+def test_file_content_dropped_except_workflows(httpx_mock):
+    # Observed live: CODEOWNERS content (base64) carried the real owner login.
+    import base64
+
+    enc = base64.b64encode(b"* @real-owner\n").decode()
+    httpx_mock.add_response(
+        url="https://api.github.com/repos/o/r/contents/.github/CODEOWNERS",
+        json={"name": "CODEOWNERS", "type": "file", "content": enc, "encoding": "base64"},
+    )
+    wf = base64.b64encode(b"jobs: {}\n").decode()
+    httpx_mock.add_response(
+        url="https://api.github.com/repos/o/r/contents/.github/workflows/ci.yml",
+        json={"name": "ci.yml", "type": "file", "content": wf, "encoding": "base64"},
+    )
+    rec = Recorder("o")
+    client = GitHubClient("t", on_response=rec)
+    client.get_json("/repos/o/r/contents/.github/CODEOWNERS")
+    client.get_json("/repos/o/r/contents/.github/workflows/ci.yml")
+    assert "content" not in rec.routes["/repos/o/r/contents/.github/CODEOWNERS"]["body"]
+    assert rec.routes["/repos/o/r/contents/.github/workflows/ci.yml"]["body"]["content"] == wf
