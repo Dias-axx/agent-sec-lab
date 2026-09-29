@@ -1,0 +1,206 @@
+{
+  "_meta": {
+    "kind": "synthetic",
+    "org": "example-org",
+    "note": "Hand-written; see README.md"
+  },
+  "/orgs/example-org": {
+    "status": 200,
+    "body": {
+      "login": "example-org",
+      "two_factor_requirement_enabled": true
+    }
+  },
+  "/orgs/example-org/repos": {
+    "status": 200,
+    "body": [
+      {
+        "name": "good-repo",
+        "full_name": "example-org/good-repo",
+        "default_branch": "main",
+        "visibility": "private",
+        "archived": false
+      },
+      {
+        "name": "bad-repo",
+        "full_name": "example-org/bad-repo",
+        "default_branch": "main",
+        "visibility": "public",
+        "archived": false
+      },
+      {
+        "name": "old-repo",
+        "full_name": "example-org/old-repo",
+        "default_branch": "main",
+        "visibility": "public",
+        "archived": true
+      }
+    ]
+  },
+  "/orgs/example-org/members": {
+    "status": 200,
+    "body": [
+      {
+        "login": "owner-a"
+      },
+      {
+        "login": "owner-b"
+      }
+    ]
+  },
+  "/orgs/example-org/actions/permissions/workflow": {
+    "status": 200,
+    "body": {
+      "default_workflow_permissions": "read",
+      "can_approve_pull_request_reviews": false
+    }
+  },
+  "/repos/example-org/good-repo": {
+    "status": 200,
+    "body": {
+      "full_name": "example-org/good-repo",
+      "security_and_analysis": {
+        "secret_scanning": {
+          "status": "enabled"
+        },
+        "secret_scanning_push_protection": {
+          "status": "enabled"
+        }
+      }
+    }
+  },
+  "/repos/example-org/good-repo/branches/main/protection": {
+    "status": 200,
+    "body": {
+      "required_pull_request_reviews": {
+        "required_approving_review_count": 1
+      }
+    }
+  },
+  "/repos/example-org/good-repo/rules/branches/main": {
+    "status": 200,
+    "body": []
+  },
+  "/repos/example-org/good-repo/vulnerability-alerts": {
+    "status": 204,
+    "body": null
+  },
+  "/repos/example-org/good-repo/actions/permissions/workflow": {
+    "status": 200,
+    "body": {
+      "default_workflow_permissions": "read",
+      "can_approve_pull_request_reviews": false
+    }
+  },
+  "/repos/example-org/good-repo/contents/.github/workflows": {
+    "status": 200,
+    "body": [
+      {
+        "name": "ci.yml",
+        "path": ".github/workflows/ci.yml",
+        "type": "file"
+      }
+    ]
+  },
+  "/repos/example-org/good-repo/contents/.github/workflows/ci.yml": {
+    "status": 200,
+    "body": {
+      "encoding": "base64",
+      "content_text": "on: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n      - uses: ./.github/actions/local\n      - uses: docker://alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000\n      - run: echo ok\n  reuse:\n    uses: example-org/shared/.github/workflows/w.yml@1111111111111111111111111111111111111111\n"
+    }
+  },
+  "/repos/example-org/good-repo/contents/.github/CODEOWNERS": {
+    "status": 200,
+    "body": {
+      "name": "CODEOWNERS",
+      "type": "file"
+    }
+  },
+  "/repos/example-org/good-repo/codeowners/errors": {
+    "status": 200,
+    "body": {
+      "errors": []
+    }
+  },
+  "/repos/example-org/bad-repo": {
+    "status": 200,
+    "body": {
+      "full_name": "example-org/bad-repo",
+      "security_and_analysis": {
+        "secret_scanning": {
+          "status": "enabled"
+        },
+        "secret_scanning_push_protection": {
+          "status": "disabled"
+        }
+      }
+    }
+  },
+  "/repos/example-org/bad-repo/branches/main/protection": {
+    "status": 404,
+    "body": {
+      "message": "Branch not protected"
+    }
+  },
+  "/repos/example-org/bad-repo/rules/branches/main": {
+    "status": 200,
+    "body": [
+      {
+        "type": "deletion"
+      }
+    ]
+  },
+  "/repos/example-org/bad-repo/vulnerability-alerts": {
+    "status": 404,
+    "body": {
+      "message": "Not Found"
+    }
+  },
+  "/repos/example-org/bad-repo/actions/permissions/workflow": {
+    "status": 200,
+    "body": {
+      "default_workflow_permissions": "write",
+      "can_approve_pull_request_reviews": true
+    }
+  },
+  "/repos/example-org/bad-repo/contents/.github/workflows": {
+    "status": 200,
+    "body": [
+      {
+        "name": "build.yaml",
+        "path": ".github/workflows/build.yaml",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "path": ".github/workflows/README.md",
+        "type": "file"
+      }
+    ]
+  },
+  "/repos/example-org/bad-repo/contents/.github/workflows/build.yaml": {
+    "status": 200,
+    "body": {
+      "encoding": "base64",
+      "content_text": "on: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: some-org/some-action@main\n      - uses: docker://alpine:3.20\n"
+    }
+  },
+  "/repos/example-org/bad-repo/contents/.github/CODEOWNERS": {
+    "status": 404,
+    "body": {
+      "message": "Not Found"
+    }
+  },
+  "/repos/example-org/bad-repo/contents/CODEOWNERS": {
+    "status": 404,
+    "body": {
+      "message": "Not Found"
+    }
+  },
+  "/repos/example-org/bad-repo/contents/docs/CODEOWNERS": {
+    "status": 404,
+    "body": {
+      "message": "Not Found"
+    }
+  }
+}

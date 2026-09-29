@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentsec"
+version = "0.1.0"
+description = "Controls-as-code: map SOC 2 / ISO 27001 controls to read-only technical checks."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.7,<3",
+  "pyyaml>=6.0",
+  "httpx>=0.27,<1",
+  "typer>=0.12",
+  "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-httpx>=0.30",
+  "ruff>=0.6",
+  "mypy>=1.11",
+  "types-PyYAML",
+  "pip-audit>=2.7",
+  "pre-commit>=3.7",
+]
+
+[project.scripts]
+agentsec = "agentsec.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentsec"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE", "SIM", "RUF"]
+ignore = ["B008"]  # typer uses call defaults by design
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["agentsec"]
+mypy_path = "src"
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
