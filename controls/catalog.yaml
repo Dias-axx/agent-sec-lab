@@ -59,7 +59,9 @@ controls:
     collector: github
     check: no_public_repos
     params:
-      allowlist: []   # repository names (without org prefix) intentionally public
+      # repository names (without org prefix, case-insensitive) intentionally public
+      allowlist:
+        - CodeReview   # lab repo in test org, public to use Free-plan protection features
     evidence: [api_response_excerpt, timestamp, repo, endpoint]
     remediation: Make the repository private/internal, or add it to the allowlist with a documented reason.
 

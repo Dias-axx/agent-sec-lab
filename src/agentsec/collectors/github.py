@@ -307,7 +307,7 @@ def dependabot_alerts_enabled(ctx: GitHubContext, params: Mapping[str, Any]) -> 
 
 
 def no_public_repos(ctx: GitHubContext, params: Mapping[str, Any]) -> list[Finding]:
-    allow = set(params.get("allowlist", []))
+    allow = {str(n).lower() for n in params.get("allowlist", [])}  # GitHub names: case-insensitive
 
     def one(repo: dict[str, Any]) -> Finding:
         name, vis = repo["full_name"], repo.get("visibility")
@@ -315,7 +315,7 @@ def no_public_repos(ctx: GitHubContext, params: Mapping[str, Any]) -> list[Findi
             return Finding(subject=name, status=Status.ERROR, detail="visibility field missing")
         if vis != "public":
             status, detail = Status.PASS, f"visibility={vis}"
-        elif repo["name"] in allow:
+        elif repo["name"].lower() in allow:
             status, detail = Status.PASS, "public, allowlisted"
         else:
             status, detail = Status.FAIL, "public and not allowlisted"

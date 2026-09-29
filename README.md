@@ -59,6 +59,9 @@ Fine-grained personal access token, resource owner = the test org, all repositor
 | Organization | Administration: read | org workflow permissions (AC-03), 2FA requirement (AC-01) |
 | Organization | Members: read | owner count (AC-04) |
 
+Free plan: branch protection, rulesets and secret scanning are only available for **public**
+repos, so test repos in a Free org should be public and listed in the AC-02 `allowlist`.
+
 `ASSUMPTION`: this permission set is derived from the GitHub REST API documentation and has not
 yet been verified against a live org. Missing permissions surface as `ERROR`, never as `PASS`.
 

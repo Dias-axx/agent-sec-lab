@@ -204,3 +204,8 @@ def test_branch_protection_other_403_still_error(github, routes, by_subject):
     }
     f = by_subject(gh.branch_protection_enabled(github, {}))
     assert f[GOOD].status is Status.ERROR
+
+
+def test_public_repo_allowlist_is_case_insensitive(github, by_subject):
+    f = by_subject(gh.no_public_repos(github, {"allowlist": ["BAD-Repo"]}))
+    assert f[BAD].status is Status.PASS
