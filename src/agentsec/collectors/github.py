@@ -528,6 +528,15 @@ def org_admin_count(ctx: GitHubContext, params: Mapping[str, Any]) -> list[Findi
     except CollectorError as exc:
         return [_err(ctx.org, exc)]
     n = len(admins)
+    if n == 0:  # every org has >= 1 owner: an empty list means the token cannot see them
+        return [
+            Finding(
+                subject=ctx.org,
+                status=Status.ERROR,
+                detail="0 org owners visible; token likely lacks organization Members read",
+                evidence=[_ev(path, role="admin", count=0)],
+            )
+        ]
     ok = min_admins <= n <= max_admins
     return [
         Finding(

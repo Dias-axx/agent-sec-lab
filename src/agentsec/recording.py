@@ -57,6 +57,7 @@ KEEP_KEYS = frozenset(
         "visibility",
     }
 )
+WORKFLOW_DIR = "/contents/.github/workflows/"
 KEEP_HEADERS = ("retry-after", "x-ratelimit-remaining", "x-ratelimit-reset")
 
 
@@ -120,6 +121,8 @@ class Recorder:
         except ValueError:
             body = None
         body = self._scrub(minimize(body))
+        if isinstance(body, dict) and "content" in body and WORKFLOW_DIR not in req.url.path:
+            del body["content"]  # file text may hold logins/emails; only workflows are parsed
         key = self._rename(req.url.path)
         page = int(req.url.params.get("page", "1") or 1)
         existing = self.routes.get(key)
