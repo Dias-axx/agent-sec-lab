@@ -2,7 +2,7 @@
   "_meta": {
     "kind": "recorded",
     "org": "demo-org",
-    "recorded_at": "2026-09-29T23:01:24.560406+00:00",
+    "recorded_at": "2026-09-29T23:11:54.980753+00:00",
     "tool_version": "0.1.0",
     "api_url": "https://api.github.com",
     "note": "Recorded from a live API; bodies minimised, logins pseudonymised."
@@ -21,8 +21,8 @@
       "status": "403"
     },
     "headers": {
-      "x-ratelimit-remaining": "4995",
-      "x-ratelimit-reset": "1790723438"
+      "x-ratelimit-remaining": "4999",
+      "x-ratelimit-reset": "1790727113"
     }
   },
   "/orgs/demo-org/members": {
@@ -58,8 +58,8 @@
       "status": "403"
     },
     "headers": {
-      "x-ratelimit-remaining": "4994",
-      "x-ratelimit-reset": "1790723438"
+      "x-ratelimit-remaining": "4998",
+      "x-ratelimit-reset": "1790727113"
     }
   },
   "/repos/demo-org/CodeReview/branches/main/protection": {
@@ -69,8 +69,8 @@
       "status": "403"
     },
     "headers": {
-      "x-ratelimit-remaining": "4969",
-      "x-ratelimit-reset": "1790723437"
+      "x-ratelimit-remaining": "4998",
+      "x-ratelimit-reset": "1790727111"
     }
   },
   "/repos/demo-org/CodeReview/codeowners/errors": {
@@ -85,7 +85,6 @@
       "name": "CODEOWNERS",
       "path": ".github/CODEOWNERS",
       "type": "file",
-      "content": "IyBEZWZhdWx0IG93bmVyIGZvciBhbGwgZmlsZXMuIFJlcXVpcmVkIHJldmll\nd2VycyBhcmUgZW5mb3JjZWQgdmlhIHRoZSAiTWFpblJ1bGUiIHJ1bGVzZXQu\nCiogQERpYXMtYXh4Cg==\n",
       "encoding": "base64"
     }
   },
@@ -131,8 +130,8 @@
       "status": "403"
     },
     "headers": {
-      "x-ratelimit-remaining": "4964",
-      "x-ratelimit-reset": "1790723437"
+      "x-ratelimit-remaining": "4993",
+      "x-ratelimit-reset": "1790727111"
     }
   }
 }
