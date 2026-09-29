@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "Control": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Z]{2,4}-\\d{2}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 3,
+          "title": "Title",
+          "type": "string"
+        },
+        "frameworks": {
+          "$ref": "#/$defs/Frameworks"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "collector": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Collector",
+          "type": "string"
+        },
+        "check": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Check",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "title": "Params",
+          "type": "object"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceKind"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "remediation": {
+          "minLength": 3,
+          "title": "Remediation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "frameworks",
+        "severity",
+        "collector",
+        "check",
+        "evidence",
+        "remediation"
+      ],
+      "title": "Control",
+      "type": "object"
+    },
+    "EvidenceKind": {
+      "enum": [
+        "api_response_excerpt",
+        "timestamp",
+        "repo",
+        "org",
+        "endpoint"
+      ],
+      "title": "EvidenceKind",
+      "type": "string"
+    },
+    "Frameworks": {
+      "additionalProperties": false,
+      "description": "Informal mapping to framework criteria. IDs only, no framework text.",
+      "properties": {
+        "soc2": {
+          "description": "SOC 2 TSC criterion IDs",
+          "items": {
+            "type": "string"
+          },
+          "title": "Soc2",
+          "type": "array"
+        },
+        "iso27001": {
+          "description": "ISO/IEC 27001:2022 Annex A control IDs",
+          "items": {
+            "type": "string"
+          },
+          "title": "Iso27001",
+          "type": "array"
+        }
+      },
+      "title": "Frameworks",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "Severity",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "controls": {
+      "items": {
+        "$ref": "#/$defs/Control"
+      },
+      "minItems": 1,
+      "title": "Controls",
+      "type": "array"
+    }
+  },
+  "required": [
+    "version",
+    "controls"
+  ],
+  "title": "Catalog",
+  "type": "object"
+}
