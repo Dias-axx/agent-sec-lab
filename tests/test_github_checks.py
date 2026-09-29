@@ -7,6 +7,18 @@ from agentsec.models import Status
 
 GOOD = "example-org/good-repo"
 BAD = "example-org/bad-repo"
+ADMIN_ALWAYS = [{"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}]
+
+
+def _ruleset(routes, repo, rid, *, reviews, bypass):
+    routes[f"/repos/example-org/{repo}/rules/branches/main"]["body"] = [
+        {"type": "pull_request", "ruleset_id": rid,
+         "parameters": {"required_approving_review_count": reviews}}
+    ]  # fmt: skip
+    routes[f"/repos/example-org/{repo}/rulesets/{rid}"] = {
+        "status": 200,
+        "body": {"id": rid, "bypass_actors": bypass},
+    }
 
 
 def test_archived_repos_excluded_by_default(github):
@@ -21,9 +33,7 @@ def test_branch_protection(github, by_subject):
 
 
 def test_branch_protection_counts_rulesets(github, routes, by_subject):
-    routes["/repos/example-org/bad-repo/rules/branches/main"]["body"] = [
-        {"type": "pull_request", "parameters": {"required_approving_review_count": 2}}
-    ]
+    _ruleset(routes, "bad-repo", 7, reviews=2, bypass=[])
     f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 2}))
     assert f[BAD].status is Status.PASS
     assert f[GOOD].status is Status.FAIL  # classic protection only requires 1
@@ -221,9 +231,7 @@ def test_branch_protection_rulesets_sufficient_classic_unreadable_passes(
         "status": 403,
         "body": {"message": "Resource not accessible by integration"},
     }
-    routes["/repos/example-org/bad-repo/rules/branches/main"]["body"] = [
-        {"type": "pull_request", "parameters": {"required_approving_review_count": 1}}
-    ]
+    _ruleset(routes, "bad-repo", 7, reviews=1, bypass=[])
     f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
     assert f[BAD].status is Status.PASS
     assert any(e.excerpt.get("unreadable") for e in f[BAD].evidence)
@@ -236,5 +244,61 @@ def test_branch_protection_rulesets_insufficient_classic_unreadable_errors(
         "status": 403,
         "body": {"message": "Resource not accessible by integration"},
     }
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[BAD].status is Status.ERROR
+
+
+# --- bypass detection (observed live: ruleset bypass_mode "always" for repository admins)
+
+
+def test_ruleset_bypass_always_fails(github, routes, by_subject):
+    _ruleset(routes, "bad-repo", 9, reviews=1, bypass=ADMIN_ALWAYS)
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[BAD].status is Status.FAIL
+    assert "bypass" in f[BAD].detail
+
+
+def test_ruleset_bypass_allowed_by_param_passes(github, routes, by_subject):
+    _ruleset(routes, "bad-repo", 9, reviews=1, bypass=ADMIN_ALWAYS)
+    params = {"required_reviews": 1, "allow_bypass": True}
+    f = by_subject(gh.branch_protection_enabled(github, params))
+    assert f[BAD].status is Status.PASS
+
+
+def test_ruleset_without_bypass_passes(github, routes, by_subject):
+    _ruleset(routes, "bad-repo", 9, reviews=1, bypass=[])
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[BAD].status is Status.PASS
+
+
+def test_classic_admins_not_enforced_fails(github, routes, by_subject):
+    routes["/repos/example-org/good-repo/branches/main/protection"]["body"]["enforce_admins"] = {
+        "enabled": False
+    }
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[GOOD].status is Status.FAIL
+    assert "bypass" in f[GOOD].detail
+
+
+def test_one_bypass_free_source_is_enough(github, routes, by_subject):
+    # classic enforces admins; an additional ruleset with bypass does not weaken it
+    _ruleset(routes, "good-repo", 9, reviews=1, bypass=ADMIN_ALWAYS)
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[GOOD].status is Status.PASS
+
+
+def test_ruleset_detail_unreadable_is_error(github, routes, by_subject):
+    _ruleset(routes, "bad-repo", 9, reviews=1, bypass=[])
+    routes["/repos/example-org/bad-repo/rulesets/9"] = {
+        "status": 403,
+        "body": {"message": "Resource not accessible by integration"},
+    }
+    f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
+    assert f[BAD].status is Status.ERROR
+
+
+def test_ruleset_bypass_actors_hidden_is_error(github, routes, by_subject):
+    _ruleset(routes, "bad-repo", 9, reviews=1, bypass=[])
+    del routes["/repos/example-org/bad-repo/rulesets/9"]["body"]["bypass_actors"]
     f = by_subject(gh.branch_protection_enabled(github, {"required_reviews": 1}))
     assert f[BAD].status is Status.ERROR
