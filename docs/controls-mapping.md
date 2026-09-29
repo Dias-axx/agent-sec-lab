@@ -34,6 +34,10 @@ Aggregation per control: any FAIL → FAIL; else any ERROR → ERROR; else PASS.
 - CM-01: if GitHub answers 403 "Upgrade to GitHub Pro…" (feature not in the org's plan,
   e.g. private repo on Free), that source counts as 0 required reviews and is noted in the
   evidence; any other 403 remains ERROR. Observed live on a private repo in a Free org.
+- CM-01: either source (classic protection, rulesets) can prove PASS on its own. An unreadable
+  source (e.g. 403 for an integration token) is noted as `unreadable` in the evidence; it only
+  yields ERROR when the readable sources do not meet the requirement. Validated live against
+  the test repo (ruleset with 1 required review, classic endpoint 403 → PASS).
 - AC-02: allowlist entries match repository names case-insensitively (as GitHub does).
 - Enterprise-level policies (enforced above the org) are not evaluated separately; the checks
   read the effective org/repo state.

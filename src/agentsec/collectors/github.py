@@ -183,53 +183,71 @@ def branch_protection_enabled(ctx: GitHubContext, params: Mapping[str, Any]) -> 
         qbranch = quote(branch, safe="")
         evidence: list[Evidence] = []
         plan_limited: list[str] = []
+        unreadable: list[ApiError] = []
 
-        classic_reviews = 0
-        path = f"/repos/{name}/branches/{qbranch}/protection"
-        code, body = ctx.client.get_raw(path)
-        msg = _msg(body)
-        if code == 200:
-            prr = body.get("required_pull_request_reviews") or {}
-            classic_reviews = int(prr.get("required_approving_review_count", 0))
-            evidence.append(_ev(path, required_approving_review_count=classic_reviews))
-        elif code == 404 and msg == "Branch not protected":
-            evidence.append(_ev(path, status=404, message=msg))
-        elif _plan_unavailable(code, body):
-            plan_limited.append("classic")
-            evidence.append(_ev(path, status=403, plan_unavailable=True))
-        else:
+        def classic() -> int:
+            path = f"/repos/{name}/branches/{qbranch}/protection"
+            code, body = ctx.client.get_raw(path)
+            msg = _msg(body)
+            if code == 200:
+                prr = body.get("required_pull_request_reviews") or {}
+                reviews = int(prr.get("required_approving_review_count", 0))
+                evidence.append(_ev(path, required_approving_review_count=reviews))
+                return reviews
+            if code == 404 and msg == "Branch not protected":
+                evidence.append(_ev(path, status=404, message=msg))
+                return 0
+            if _plan_unavailable(code, body):
+                plan_limited.append("classic")
+                evidence.append(_ev(path, status=403, plan_unavailable=True))
+                return 0
             raise ApiError(path, code, msg)
 
-        rules_path = f"/repos/{name}/rules/branches/{qbranch}"
-        code, rules = ctx.client.get_raw(rules_path)
-        ruleset_reviews = 0
-        if code == 200 and isinstance(rules, list):
-            ruleset_reviews = max(
-                (
-                    int((r.get("parameters") or {}).get("required_approving_review_count", 0))
-                    for r in rules
-                    if r.get("type") == "pull_request"
-                ),
-                default=0,
-            )
-            evidence.append(_ev(rules_path, pull_request_required_reviews=ruleset_reviews))
-        elif _plan_unavailable(code, rules):
-            plan_limited.append("rulesets")
-            evidence.append(_ev(rules_path, status=403, plan_unavailable=True))
-        else:
-            raise ApiError(rules_path, code, _msg(rules))
+        def rulesets() -> int:
+            path = f"/repos/{name}/rules/branches/{qbranch}"
+            code, rules = ctx.client.get_raw(path)
+            if code == 200 and isinstance(rules, list):
+                reviews = max(
+                    (
+                        int((r.get("parameters") or {}).get("required_approving_review_count", 0))
+                        for r in rules
+                        if r.get("type") == "pull_request"
+                    ),
+                    default=0,
+                )
+                evidence.append(_ev(path, pull_request_required_reviews=reviews))
+                return reviews
+            if _plan_unavailable(code, rules):
+                plan_limited.append("rulesets")
+                evidence.append(_ev(path, status=403, plan_unavailable=True))
+                return 0
+            raise ApiError(path, code, _msg(rules))
 
-        effective = max(classic_reviews, ruleset_reviews)
-        ok = effective >= required
+        # Either source alone can prove PASS; an unreadable source only matters if the
+        # readable ones are insufficient (then ERROR, never a guessed FAIL/PASS).
+        effective = 0
+        for source in (classic, rulesets):
+            try:
+                effective = max(effective, source())
+            except ApiError as exc:
+                unreadable.append(exc)
+                evidence.append(_ev(exc.endpoint, status=exc.status, unreadable=True))
+
         detail = f"branch '{branch}': {effective} required review(s), need >= {required}"
         if plan_limited:
             detail += f"; {' and '.join(plan_limited)} not available on current GitHub plan"
-        return Finding(
-            subject=name,
-            status=Status.PASS if ok else Status.FAIL,
-            detail=detail,
-            evidence=evidence,
-        )
+        if effective >= required:
+            if unreadable:
+                detail += f"; {len(unreadable)} source(s) unreadable, not needed for PASS"
+            return Finding(subject=name, status=Status.PASS, detail=detail, evidence=evidence)
+        if unreadable:
+            return Finding(
+                subject=name,
+                status=Status.ERROR,
+                detail=f"{detail}; cannot conclude: {unreadable[0]}",
+                evidence=evidence,
+            )
+        return Finding(subject=name, status=Status.FAIL, detail=detail, evidence=evidence)
 
     return _per_repo(ctx, one)
 
