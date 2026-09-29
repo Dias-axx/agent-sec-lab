@@ -37,6 +37,8 @@ ruff check . && ruff format --check . && mypy && pytest
 agentsec validate --catalog controls/catalog.yaml
 agentsec schema                                  # regenerate controls/catalog.schema.json
 python examples/generate_synthetic.py            # regenerate SYNTHETIC sample report
+agentsec run --org <ORG> --record tests/fixtures/github/recorded/<n>.json  # record live fixture
+agentsec run --replay <fixture.json>             # offline run, no token
 ```
 
 ## Conventions

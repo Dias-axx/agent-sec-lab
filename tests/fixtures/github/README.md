@@ -13,4 +13,7 @@ Field names and status-code semantics follow the public GitHub REST API document
 A `content_text` key in a body is base64-encoded into `content` by `tests/conftest.py`
 (keeps workflow YAML readable).
 
-Replace with recorded, scrubbed responses from the owner's test org once available.
+The file carries `_meta.kind = "synthetic"`; reports replayed from it get the
+`SYNTHETIC EXAMPLE` banner.
+
+Recorded (real) fixtures live in [`recorded/`](recorded/README.md).

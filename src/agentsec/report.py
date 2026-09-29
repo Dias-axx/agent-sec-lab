@@ -18,6 +18,7 @@ _TEMPLATE = """\
 | Field | Value |
 |---|---|
 | Tool version | {{ m.tool_version }} |
+| Data source | {{ m.data_source }} |
 | Catalog | `{{ m.catalog_path }}` (sha256 `{{ m.catalog_sha256[:12] }}…`) |
 | Started (UTC) | {{ m.started_at.isoformat() }} |
 | Finished (UTC) | {{ m.finished_at.isoformat() }} |

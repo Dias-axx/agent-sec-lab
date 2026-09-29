@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import base64
 import copy
-import json
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
@@ -12,6 +10,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from agentsec.collectors.github import GitHubClient, GitHubContext
+from agentsec.recording import load_fixture
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = Path(__file__).parent / "fixtures" / "github"
@@ -21,12 +20,7 @@ Routes = dict[str, dict[str, Any]]
 
 
 def load_scenario() -> Routes:
-    routes: Routes = json.loads((FIXTURES / "org_scenario.json").read_text())
-    for route in routes.values():
-        body = route.get("body")
-        if isinstance(body, dict) and "content_text" in body:
-            body["content"] = base64.b64encode(body.pop("content_text").encode()).decode()
-    return routes
+    return load_fixture(FIXTURES / "org_scenario.json")[1]
 
 
 @pytest.fixture

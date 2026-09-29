@@ -5,9 +5,10 @@
 | Field | Value |
 |---|---|
 | Tool version | 0.1.0 |
+| Data source | replay:org_scenario.json (synthetic) |
 | Catalog | `controls/catalog.yaml` (sha256 `d5eb9596b34f…`) |
-| Started (UTC) | 2026-09-29T21:17:54.978893+00:00 |
-| Finished (UTC) | 2026-09-29T21:17:54.984033+00:00 |
+| Started (UTC) | 2026-09-29T21:26:41.970995+00:00 |
+| Finished (UTC) | 2026-09-29T21:26:41.977208+00:00 |
 
 ## Summary
 
@@ -42,10 +43,10 @@ Check: `github.branch_protection_enabled` · params: `{'required_reviews': 1}`
 
 <details><summary>Evidence</summary>
 
-- `example-org/good-repo` · `GET /repos/example-org/good-repo/branches/main/protection` · 2026-09-29T21:17:54.979644+00:00 · `{'required_approving_review_count': 1}`
-- `example-org/good-repo` · `GET /repos/example-org/good-repo/rules/branches/main` · 2026-09-29T21:17:54.979850+00:00 · `{'pull_request_required_reviews': 0}`
-- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/branches/main/protection` · 2026-09-29T21:17:54.980004+00:00 · `{'status': 404, 'message': 'Branch not protected'}`
-- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/rules/branches/main` · 2026-09-29T21:17:54.980130+00:00 · `{'pull_request_required_reviews': 0}`
+- `example-org/good-repo` · `GET /repos/example-org/good-repo/branches/main/protection` · 2026-09-29T21:26:41.971996+00:00 · `{'required_approving_review_count': 1}`
+- `example-org/good-repo` · `GET /repos/example-org/good-repo/rules/branches/main` · 2026-09-29T21:26:41.972223+00:00 · `{'pull_request_required_reviews': 0}`
+- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/branches/main/protection` · 2026-09-29T21:26:41.972464+00:00 · `{'status': 404, 'message': 'Branch not protected'}`
+- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/rules/branches/main` · 2026-09-29T21:26:41.972632+00:00 · `{'pull_request_required_reviews': 0}`
 
 </details>
 
@@ -60,7 +61,7 @@ Check: `github.org_mfa_required` · params: `{}`
 
 <details><summary>Evidence</summary>
 
-- `example-org` · `GET /orgs/example-org` · 2026-09-29T21:17:54.980306+00:00 · `{'two_factor_requirement_enabled': True}`
+- `example-org` · `GET /orgs/example-org` · 2026-09-29T21:26:41.972805+00:00 · `{'two_factor_requirement_enabled': True}`
 
 </details>
 
@@ -77,8 +78,8 @@ Check: `github.secret_scanning_enabled` · params: `{'require_push_protection': 
 
 <details><summary>Evidence</summary>
 
-- `example-org/good-repo` · `GET /repos/example-org/good-repo` · 2026-09-29T21:17:54.980472+00:00 · `{'secret_scanning': 'enabled', 'push_protection': 'enabled'}`
-- `example-org/bad-repo` · `GET /repos/example-org/bad-repo` · 2026-09-29T21:17:54.980658+00:00 · `{'secret_scanning': 'enabled', 'push_protection': 'disabled'}`
+- `example-org/good-repo` · `GET /repos/example-org/good-repo` · 2026-09-29T21:26:41.973016+00:00 · `{'secret_scanning': 'enabled', 'push_protection': 'enabled'}`
+- `example-org/bad-repo` · `GET /repos/example-org/bad-repo` · 2026-09-29T21:26:41.973234+00:00 · `{'secret_scanning': 'enabled', 'push_protection': 'disabled'}`
 
 </details>
 
@@ -95,8 +96,8 @@ Check: `github.dependabot_alerts_enabled` · params: `{}`
 
 <details><summary>Evidence</summary>
 
-- `example-org/good-repo` · `GET /repos/example-org/good-repo/vulnerability-alerts` · 2026-09-29T21:17:54.980806+00:00 · `{'http_status': 204}`
-- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/vulnerability-alerts` · 2026-09-29T21:17:54.980983+00:00 · `{'http_status': 404}`
+- `example-org/good-repo` · `GET /repos/example-org/good-repo/vulnerability-alerts` · 2026-09-29T21:26:41.973393+00:00 · `{'http_status': 204}`
+- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/vulnerability-alerts` · 2026-09-29T21:26:41.973544+00:00 · `{'http_status': 404}`
 
 </details>
 
@@ -113,8 +114,8 @@ Check: `github.no_public_repos` · params: `{'allowlist': []}`
 
 <details><summary>Evidence</summary>
 
-- `example-org/good-repo` · `GET /orgs/example-org/repos` · 2026-09-29T21:17:54.981003+00:00 · `{'visibility': 'private'}`
-- `example-org/bad-repo` · `GET /orgs/example-org/repos` · 2026-09-29T21:17:54.981007+00:00 · `{'visibility': 'public'}`
+- `example-org/good-repo` · `GET /orgs/example-org/repos` · 2026-09-29T21:26:41.973559+00:00 · `{'visibility': 'private'}`
+- `example-org/bad-repo` · `GET /orgs/example-org/repos` · 2026-09-29T21:26:41.973564+00:00 · `{'visibility': 'public'}`
 
 </details>
 
@@ -131,8 +132,8 @@ Check: `github.actions_pinned_shas` · params: `{}`
 
 <details><summary>Evidence</summary>
 
-- `example-org/good-repo` · `GET /repos/example-org/good-repo/contents/.github/workflows` · 2026-09-29T21:17:54.981956+00:00 · `{'workflow_files': 1, 'unpinned': []}`
-- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/contents/.github/workflows` · 2026-09-29T21:17:54.982759+00:00 · `{'workflow_files': 1, 'unpinned': ['.github/workflows/build.yaml: actions/checkout@v4', '.github/workflows/build.yaml: some-org/some-action@main', '.github/workflows/build.yaml: docker://alpine:3.20']}`
+- `example-org/good-repo` · `GET /repos/example-org/good-repo/contents/.github/workflows` · 2026-09-29T21:26:41.974656+00:00 · `{'workflow_files': 1, 'unpinned': []}`
+- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/contents/.github/workflows` · 2026-09-29T21:26:41.975511+00:00 · `{'workflow_files': 1, 'unpinned': ['.github/workflows/build.yaml: actions/checkout@v4', '.github/workflows/build.yaml: some-org/some-action@main', '.github/workflows/build.yaml: docker://alpine:3.20']}`
 
 </details>
 
@@ -150,9 +151,9 @@ Check: `github.actions_default_token_read_only` · params: `{'allow_pr_approval'
 
 <details><summary>Evidence</summary>
 
-- `example-org` · `GET /orgs/example-org/actions/permissions/workflow` · 2026-09-29T21:17:54.982955+00:00 · `{'default_workflow_permissions': 'read', 'can_approve_pr_reviews': False}`
-- `example-org/good-repo` · `GET /repos/example-org/good-repo/actions/permissions/workflow` · 2026-09-29T21:17:54.983076+00:00 · `{'default_workflow_permissions': 'read', 'can_approve_pr_reviews': False}`
-- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/actions/permissions/workflow` · 2026-09-29T21:17:54.983191+00:00 · `{'default_workflow_permissions': 'write', 'can_approve_pr_reviews': True}`
+- `example-org` · `GET /orgs/example-org/actions/permissions/workflow` · 2026-09-29T21:26:41.975696+00:00 · `{'default_workflow_permissions': 'read', 'can_approve_pr_reviews': False}`
+- `example-org/good-repo` · `GET /repos/example-org/good-repo/actions/permissions/workflow` · 2026-09-29T21:26:41.975882+00:00 · `{'default_workflow_permissions': 'read', 'can_approve_pr_reviews': False}`
+- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/actions/permissions/workflow` · 2026-09-29T21:26:41.976131+00:00 · `{'default_workflow_permissions': 'write', 'can_approve_pr_reviews': True}`
 
 </details>
 
@@ -169,9 +170,9 @@ Check: `github.codeowners_present` · params: `{}`
 
 <details><summary>Evidence</summary>
 
-- `example-org/good-repo` · `GET /repos/example-org/good-repo/contents/.github/CODEOWNERS` · 2026-09-29T21:17:54.983435+00:00 · `{'found': True}`
-- `example-org/good-repo` · `GET /repos/example-org/good-repo/codeowners/errors` · 2026-09-29T21:17:54.983437+00:00 · `{'error_count': 0}`
-- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/contents` · 2026-09-29T21:17:54.983786+00:00 · `{'searched': ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']}`
+- `example-org/good-repo` · `GET /repos/example-org/good-repo/contents/.github/CODEOWNERS` · 2026-09-29T21:26:41.976482+00:00 · `{'found': True}`
+- `example-org/good-repo` · `GET /repos/example-org/good-repo/codeowners/errors` · 2026-09-29T21:26:41.976485+00:00 · `{'error_count': 0}`
+- `example-org/bad-repo` · `GET /repos/example-org/bad-repo/contents` · 2026-09-29T21:26:41.976887+00:00 · `{'searched': ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']}`
 
 </details>
 
@@ -186,7 +187,7 @@ Check: `github.org_admin_count` · params: `{'min_admins': 2, 'max_admins': 3}`
 
 <details><summary>Evidence</summary>
 
-- `example-org` · `GET /orgs/example-org/members` · 2026-09-29T21:17:54.983958+00:00 · `{'role': 'admin', 'count': 2}`
+- `example-org` · `GET /orgs/example-org/members` · 2026-09-29T21:26:41.977114+00:00 · `{'role': 'admin', 'count': 2}`
 
 </details>
 

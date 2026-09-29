@@ -31,6 +31,22 @@ Output: `reports/report.md` and `reports/report.json`.
 | 2 | No FAIL, but at least one ERROR at or above `--fail-on` |
 | 3 | Setup error (missing token, invalid catalog, unsupported target) |
 
+### Record and replay
+
+```bash
+# live run + save minimised, pseudonymised API responses as a reusable fixture
+agentsec run --org <YOUR_TEST_ORG> --org-alias demo-org \
+  --record tests/fixtures/github/recorded/demo.json --out reports/
+
+# offline run at any time, no token, against a recorded or synthetic fixture
+agentsec run --replay tests/fixtures/github/recorded/demo.json --out reports/
+agentsec run --replay tests/fixtures/github/org_scenario.json --out reports/   # SYNTHETIC
+```
+
+Replay is strict: a request path missing from the fixture yields `ERROR`, never a guessed
+result. The report records its data source (`live` / `replay:<file> (<kind>)`).
+Details: [`tests/fixtures/github/recorded/README.md`](tests/fixtures/github/recorded/README.md).
+
 ### Token permissions
 
 Fine-grained personal access token, resource owner = the test org, all repositories, **read-only**:
@@ -106,7 +122,8 @@ history (checksum-pinned binary). All third-party actions are pinned to commit S
 - Run only against organisations you own or are explicitly authorised to assess.
 - Checks read effective configuration at a point in time; they do not prove operating
   effectiveness over a period.
-- Test fixtures are synthetic (see `tests/fixtures/github/README.md`).
+- Test fixtures: hand-written synthetic scenario plus optional recorded fixtures from a live
+  test org (`--record`); see `tests/fixtures/github/`.
 - Azure collector (phase 2) is not implemented.
 
 ## License

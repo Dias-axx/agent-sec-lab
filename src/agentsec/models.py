@@ -127,6 +127,7 @@ class RunMetadata(BaseModel):
     org: str
     catalog_path: str
     catalog_sha256: str
+    data_source: str = "live"
     started_at: datetime
     finished_at: datetime
 

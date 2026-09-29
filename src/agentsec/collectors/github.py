@@ -34,9 +34,11 @@ class GitHubClient:
         base_url: str = DEFAULT_BASE_URL,
         timeout: float = 30.0,
         transport: httpx.BaseTransport | None = None,
+        on_response: Callable[[httpx.Response], None] | None = None,
     ) -> None:
         if not token:
             raise CollectorError("GITHUB_TOKEN is empty")
+        self._on_response = on_response
         self._http = httpx.Client(
             base_url=base_url,
             timeout=timeout,
@@ -57,6 +59,8 @@ class GitHubClient:
             resp = self._http.get(path, params=params)
         except httpx.HTTPError as exc:
             raise ApiError(path, 0, f"transport error: {type(exc).__name__}") from exc
+        if self._on_response is not None:
+            self._on_response(resp)
         if resp.status_code in (403, 429) and (
             resp.headers.get("x-ratelimit-remaining") == "0" or "retry-after" in resp.headers
         ):

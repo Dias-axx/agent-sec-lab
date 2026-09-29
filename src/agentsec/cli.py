@@ -11,6 +11,7 @@ from agentsec.catalog import CatalogError, load_catalog, write_schema
 from agentsec.collectors.base import CollectorError
 from agentsec.collectors.github import DEFAULT_BASE_URL, GitHubClient, GitHubContext
 from agentsec.models import Severity
+from agentsec.recording import Recorder, load_fixture, replay_transport
 from agentsec.report import write_reports
 from agentsec.runner import exit_code, run_catalog
 
@@ -41,11 +42,22 @@ def schema(out: Path = typer.Option(Path("controls/catalog.schema.json"), "--out
 def run(
     catalog: Path = CATALOG_OPT,
     target: str = typer.Option("github", "--target", "-t"),
-    org: str = typer.Option(..., "--org", help="Organisation you own / are authorised to assess"),
+    org: str | None = typer.Option(
+        None, "--org", help="Organisation you own / are authorised to assess"
+    ),
     out: Path = typer.Option(Path("reports"), "--out", "-o"),
     fail_on: Severity = typer.Option(Severity.HIGH, "--fail-on"),
     include_archived: bool = typer.Option(False, "--include-archived"),
     api_url: str = typer.Option(DEFAULT_BASE_URL, "--api-url", envvar="GITHUB_API_URL"),
+    record: Path | None = typer.Option(
+        None, "--record", help="Live run: also save minimised API responses as a fixture file"
+    ),
+    org_alias: str | None = typer.Option(
+        None, "--org-alias", help="With --record: replace the org name in the fixture"
+    ),
+    replay: Path | None = typer.Option(
+        None, "--replay", exists=True, help="Offline run against a fixture file (no token)"
+    ),
 ) -> None:
     """Run read-only checks and write report.md + report.json.
 
@@ -54,18 +66,44 @@ def run(
     if target != "github":
         typer.echo(f"unsupported target: {target}", err=True)
         raise typer.Exit(3)
+    if record and replay:
+        typer.echo("--record and --replay are mutually exclusive", err=True)
+        raise typer.Exit(3)
+
+    recorder: Recorder | None = None
+    synthetic = False
+    source = "live"
     try:
         cat = load_catalog(catalog)
-        client = GitHubClient(os.environ.get("GITHUB_TOKEN", ""), base_url=api_url)
-    except (CatalogError, CollectorError) as exc:
+        if replay:
+            meta, routes = load_fixture(replay)
+            org = org or meta.get("org")
+            synthetic = meta.get("kind") == "synthetic"
+            source = f"replay:{replay.name} ({meta.get('kind', 'unknown')})"
+            client = GitHubClient("replay", transport=replay_transport(routes))
+        else:
+            if org:
+                recorder = Recorder(org, org_alias=org_alias) if record else None
+            client = GitHubClient(
+                os.environ.get("GITHUB_TOKEN", ""), base_url=api_url, on_response=recorder
+            )
+        if not org:
+            raise CollectorError("--org is required (or a fixture with _meta.org)")
+    except (CatalogError, CollectorError, ValueError) as exc:
         typer.echo(f"setup error: {exc}", err=True)
         raise typer.Exit(3) from exc
     try:
         ctx = GitHubContext(client=client, org=org, include_archived=include_archived)
-        report = run_catalog(cat, target=target, org=org, context=ctx, catalog_path=catalog)
+        report = run_catalog(
+            cat, target=target, org=org, context=ctx, catalog_path=catalog, data_source=source
+        )
     finally:
         client.close()
-    md, js = write_reports(report, out)
+    if recorder is not None and record is not None:
+        typer.echo(
+            f"recorded {len(recorder.routes)} responses -> {recorder.save(record, api_url=api_url)}"
+        )
+    md, js = write_reports(report, out, synthetic=synthetic)
     c = report.counts()
     typer.echo(f"PASS={c['PASS']} FAIL={c['FAIL']} ERROR={c['ERROR']} -> {md}, {js}")
     raise typer.Exit(exit_code(report, fail_on))

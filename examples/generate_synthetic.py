@@ -8,38 +8,28 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import httpx
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from tests.conftest import ORG, load_scenario  # noqa: E402
-
 from agentsec.catalog import load_catalog  # noqa: E402
 from agentsec.collectors.github import GitHubClient, GitHubContext  # noqa: E402
+from agentsec.recording import load_fixture, replay_transport  # noqa: E402
 from agentsec.report import render_markdown  # noqa: E402
 from agentsec.runner import run_catalog  # noqa: E402
 
 
 def main() -> None:
-    routes = load_scenario()
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        route = routes.get(request.url.path)
-        if route is None:
-            return httpx.Response(404, json={"message": "Not Found"})
-        if route.get("body") is None:
-            return httpx.Response(route["status"])
-        return httpx.Response(route["status"], json=route["body"])
-
+    fixture = ROOT / "tests" / "fixtures" / "github" / "org_scenario.json"
+    meta, routes = load_fixture(fixture)
     catalog_path = Path("controls/catalog.yaml")
-    client = GitHubClient("synthetic", transport=httpx.MockTransport(handler))
+    client = GitHubClient("synthetic", transport=replay_transport(routes))
     report = run_catalog(
         load_catalog(ROOT / catalog_path),
         target="github",
-        org=ORG,
-        context=GitHubContext(client=client, org=ORG),
+        org=meta["org"],
+        context=GitHubContext(client=client, org=meta["org"]),
         catalog_path=catalog_path,
+        data_source=f"replay:{fixture.name} (synthetic)",
     )
     out = ROOT / "examples" / "sample-report.md"
     out.write_text(render_markdown(report, synthetic=True), encoding="utf-8")
