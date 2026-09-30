@@ -28,6 +28,7 @@ def run_catalog(
     context: Any,
     catalog_path: Path,
     data_source: str = "live",
+    repo_scope: list[str] | None = None,
 ) -> Report:
     started = datetime.now(UTC)
     spec = REGISTRY[target]
@@ -57,6 +58,7 @@ def run_catalog(
             catalog_path=str(catalog_path),
             catalog_sha256=sha256_of(catalog_path),
             data_source=data_source,
+            repo_scope=repo_scope,
             started_at=started,
             finished_at=datetime.now(UTC),
         ),

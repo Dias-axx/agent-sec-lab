@@ -123,13 +123,30 @@ class GitHubContext:
     client: GitHubClient
     org: str
     include_archived: bool = False
+    only_repos: list[str] | None = None  # scope to these names; org repo list is not fetched
     _repos: list[dict[str, Any]] | None = field(default=None, repr=False)
 
     def repos(self) -> list[dict[str, Any]]:
         if self._repos is None:
-            all_repos = list(self.client.paginate(f"/orgs/{self.org}/repos", {"type": "all"}))
-            self._repos = [r for r in all_repos if self.include_archived or not r.get("archived")]
+            if self.only_repos:
+                self._repos = self._scoped_repos(self.only_repos)
+            else:
+                listed = self.client.paginate(f"/orgs/{self.org}/repos", {"type": "all"})
+                self._repos = [r for r in listed if self.include_archived or not r.get("archived")]
         return self._repos
+
+    def _scoped_repos(self, names: list[str]) -> list[dict[str, Any]]:
+        found: list[dict[str, Any]] = []
+        missing: list[str] = []
+        for name in names:
+            code, body = self.client.get_raw(f"/repos/{self.org}/{quote(name, safe='')}")
+            if code == 200 and isinstance(body, dict):
+                found.append(body)
+            else:
+                missing.append(f"{name} (HTTP {code})")
+        if missing:
+            raise CollectorError("repositories not visible to the token: " + ", ".join(missing))
+        return found
 
 
 def _ev(endpoint: str, **excerpt: Any) -> Evidence:
@@ -153,7 +170,10 @@ def _err(subject: str, exc: CollectorError) -> Finding:
 
 
 def _per_repo(ctx: GitHubContext, fn: Callable[[dict[str, Any]], Finding]) -> list[Finding]:
-    repos = ctx.repos()
+    try:
+        repos = ctx.repos()
+    except CollectorError as exc:
+        return [_err(ctx.org, exc)]
     if not repos:
         return [
             Finding(

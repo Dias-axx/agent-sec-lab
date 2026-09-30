@@ -48,6 +48,9 @@ def run(
     out: Path = typer.Option(Path("reports"), "--out", "-o"),
     fail_on: Severity = typer.Option(Severity.HIGH, "--fail-on"),
     include_archived: bool = typer.Option(False, "--include-archived"),
+    repo: list[str] | None = typer.Option(
+        None, "--repo", help="Only check this repository (repeatable); org repo list is not read"
+    ),
     api_url: str = typer.Option(DEFAULT_BASE_URL, "--api-url", envvar="GITHUB_API_URL"),
     record: Path | None = typer.Option(
         None, "--record", help="Live run: also save minimised API responses as a fixture file"
@@ -93,9 +96,17 @@ def run(
         typer.echo(f"setup error: {exc}", err=True)
         raise typer.Exit(3) from exc
     try:
-        ctx = GitHubContext(client=client, org=org, include_archived=include_archived)
+        ctx = GitHubContext(
+            client=client, org=org, include_archived=include_archived, only_repos=repo or None
+        )
         report = run_catalog(
-            cat, target=target, org=org, context=ctx, catalog_path=catalog, data_source=source
+            cat,
+            target=target,
+            org=org,
+            context=ctx,
+            catalog_path=catalog,
+            data_source=source,
+            repo_scope=repo or None,
         )
     finally:
         client.close()

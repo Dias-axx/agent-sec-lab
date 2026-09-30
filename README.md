@@ -49,7 +49,10 @@ Details: [`tests/fixtures/github/recorded/README.md`](tests/fixtures/github/reco
 
 ### Token permissions
 
-Fine-grained personal access token, resource owner = the test org, all repositories, **read-only**:
+Fine-grained personal access token, resource owner = the test org, **read-only**. Repository
+access: "All repositories", or "Only select repositories" combined with `--repo <name>` (repeatable)
+to keep other repositories out of scope. With `--repo`, the org's repository list is not read and
+the report states the scope.
 
 | Scope | Permission | Used by |
 |---|---|---|

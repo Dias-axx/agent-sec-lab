@@ -128,6 +128,7 @@ class RunMetadata(BaseModel):
     catalog_path: str
     catalog_sha256: str
     data_source: str = "live"
+    repo_scope: list[str] | None = None
     started_at: datetime
     finished_at: datetime
 

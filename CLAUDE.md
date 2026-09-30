@@ -39,6 +39,7 @@ agentsec schema                                  # regenerate controls/catalog.s
 python examples/generate_synthetic.py            # regenerate SYNTHETIC sample report
 agentsec run --org <ORG> --record tests/fixtures/github/recorded/<n>.json  # record live fixture
 agentsec run --replay <fixture.json>             # offline run, no token
+agentsec run --org <ORG> --repo <NAME> ...        # scope to named repos only
 ```
 
 ## Conventions
@@ -70,7 +71,8 @@ agentsec run --replay <fixture.json>             # offline run, no token
 ## Test environment
 
 - GitHub test org: `dias-axx-lab` (owner-controlled, lab only). Token: fine-grained, read-only,
-  supplied by the owner via `GITHUB_TOKEN`; never committed. Recordings use `--org-alias demo-org`.
+  supplied by the owner via `GITHUB_TOKEN`; never committed. Recordings use `--org-alias demo-org`
+  and `--repo CodeReview` (token scoped to selected repositories; other org repos out of scope).
 - Test repo `dias-axx-lab/CodeReview` is **public** on purpose (Free plan: rulesets, branch
   protection and secret scanning are only available for public repos) and allowlisted in AC-02.
 - Live runs happen on the owner's machine. The Claude Code cloud session cannot reach
